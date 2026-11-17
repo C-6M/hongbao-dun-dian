@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>长期记录 · 红包蹲点</title>
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#101522;color:#eef2ff;font:14px/1.6 system-ui,sans-serif}
+main{max-width:1300px;margin:32px auto;padding:0 20px}a{color:#8db5ff}h1{font-size:25px;margin:0}
+header{display:flex;align-items:center;justify-content:space-between;gap:20px}p{color:#aab6cb}
+form{display:flex;flex-wrap:wrap;align-items:end;gap:12px;background:#1a2234;padding:18px;border-radius:12px}
+label{display:grid;gap:5px;font-size:12px;color:#bac5d9}input,select,button{font:inherit;border:1px solid #3c4962;border-radius:6px;padding:8px;background:#111929;color:#eef2ff;max-width:100%}
+button{cursor:pointer;background:#3269cb;padding:8px 18px}button:disabled{opacity:.45;cursor:default}
+.table-wrap{overflow:auto;margin:18px 0;border:1px solid #303b50;border-radius:10px}table{width:100%;border-collapse:collapse;white-space:nowrap}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #2a3448}th{background:#1a2234;font-size:12px;color:#bac5d9}
+td{font-variant-numeric:tabular-nums}.error{color:#ff9a9a}.actions{display:flex;gap:10px}#status{min-height:24px}
+@media(max-width:600px){main{margin-top:18px;padding:0 12px}label{width:100%}header{align-items:start}h1{font-size:22px}}
+</style>
+</head>
+<body><main>
+<header><h1>长期记录</h1><a href="/pool">返回实时看板</a></header>
+<p id="summary">正在读取历史库…</p>
+<form id="filters">
+  <label>查看<select id="view"><option value="events">红包 / 天选明细</option><option value="requests">逐次扫描记录</option></select></label>
+  <label>房间号<input id="room" inputmode="numeric" pattern="[0-9]{1,20}" placeholder="全部房间"></label>
+  <label>开始时间（本地）<input id="from" type="datetime-local"></label>
+  <label>结束时间（不含）<input id="to" type="datetime-local"></label>
+  <label>类型<select id="kind"><option value="">全部</option><option value="rp">红包</option><option value="anchor">天选</option><option value="ip" data-request>出口检查</option><option value="discovery" data-request>房间发现</option><option value="audience" data-request>在线榜人数</option><option value="audience-room" data-request>主播资料</option></select></label>
+  <label id="amount-field">最低人均电池<input id="amount" type="number" min="0" max="100000000" step="any" placeholder="不限"></label>
+  <label id="outcome-field" hidden>结果<select id="outcome"><option value="">全部</option><option value="hit">命中</option><option value="empty">成功空扫</option><option value="error">请求失败</option><option value="banned">触发限制</option><option value="cancelled">已取消</option><option value="interrupted">进程中断</option><option value="pending">等待结果</option><option value="ok">成功（辅助请求）</option></select></label>
+  <button type="submit" id="search">查询</button>
+</form>
+<p>每页 50 条，按入库顺序倒序展示。明细按首次发现时间筛选；扫描记录按请求开始时间筛选。旧记录标为“历史导入”，缺少的时间显示为“未知”。</p>
+<div id="status" role="status" aria-live="polite"></div>
+<div class="table-wrap"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div>
+<div class="actions"><button id="previous" disabled>上一页</button><button id="next" disabled>下一页</button></div>
+<p>记录持续保存在本机，不自动删减；过去未记录的扫描无法补齐。每次请求关联当时的房间层级、轮次和运行配置，可用于之后分析扫描策略。</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const stamp = n => n ? new Date(n).toLocaleString('zh-CN', {hour12:false}) : '未知';
+const kinds = {rp:'红包',anchor:'天选',ip:'出口检查',discovery:'房间发现',audience:'在线榜人数','audience-room':'主播资料'};
+const outcomes = {hit:'命中',empty:'成功空扫',error:'请求失败',banned:'触发限制',cancelled:'已取消',interrupted:'进程中断',pending:'等待结果',ok:'成功'};
+const tiers = {COLD_PRIORITY:'榜单优先',COLD_HISTORY:'历史来源复查',AUDIENCE:'人数补查'};
+let cursors = [null], page = 0, next = null, activeQuery = null, busy = false;
+function setView() {
+  const requests = $('view').value === 'requests';
+  $('amount-field').hidden = requests; $('amount').disabled = requests;
+  $('outcome-field').hidden = !requests; $('outcome').disabled = !requests;
+  document.querySelectorAll('[data-request]').forEach(o => { o.disabled = !requests; });
+  if (!requests && ['ip','discovery','audience','audience-room'].includes($('kind').value)) $('kind').value = '';
+}
+$('view').addEventListener('change', setView); setView();
+function controls() {
+  $('search').disabled = busy; $('previous').disabled = busy || page === 0; $('next').disabled = busy || !next;
+}
+async function load() {
+  busy = true; controls(); $('status').className = ''; $('status').textContent = '查询中…';
+  try {
+    const params = new URLSearchParams(activeQuery.params);
+    if (cursors[page]) params.set('before', cursors[page]);
+    const response = await fetch('/pool/api/history/' + activeQuery.type + '?' + params, {cache:'no-store'});
+    const data = await response.json(); if (!response.ok || !data.ok) throw new Error(data.msg || '查询失败');
+    const events = activeQuery.type === 'events';
+    const columns = events ? ['房间','类型 / 编号','首次发现','最后发现','奖励','总电池 / 人均','名额','开始 / 结束','记录来源','命中扫描次数']
+      : ['请求编号','房间','接口','开始时间','耗时','结果','HTTP / 业务码','轮次 / 层级','关联事件编号'];
+    $('head').innerHTML = '<tr>' + columns.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr>';
+    $('rows').innerHTML = data.items.map(r => {
+      const room = /^\d+$/.test(r.room_id || '') ? '<a target="_blank" rel="noopener noreferrer" href="https://live.bilibili.com/' + r.room_id + '">' + r.room_id + '</a>' : '—';
+      const cells = events ? [room, esc((kinds[r.kind] || r.kind) + ' / ' + r.lid), esc(stamp(r.first_seen)), esc(stamp(r.last_seen)), esc(r.detail.award_name || '—'), esc(r.battery + ' / ' + Number(r.per_person).toFixed(2)), esc(r.award_num), esc(stamp(r.start_time * 1000) + ' / ' + stamp(r.end_time * 1000)), r.imported ? (r.observations ? '历史导入 + 实时扫描' : '历史导入') : '实时扫描', esc(r.observations)]
+        : [esc(r.id), room, esc(kinds[r.kind] || r.kind), esc(stamp(r.started_at)), r.duration_ms == null ? '—' : esc(r.duration_ms + ' ms'), esc((outcomes[r.outcome] || r.outcome) + (r.reason ? ' · ' + r.reason : '')), esc((r.http_code ?? '—') + ' / ' + (r.business_code ?? '—')), esc(r.round + ' / ' + (tiers[r.tier] || r.tier || '—')), esc(r.event_ids.join(', ') || '—')];
+      return '<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>';
+    }).join('');
+    next = data.next; $('status').textContent = '第 ' + (page + 1) + ' 页 · ' + data.items.length + ' 条' + (!data.items.length ? '，没有匹配的记录' : '');
+  } catch(e) { next = null; $('rows').textContent = ''; $('status').className = 'error'; $('status').textContent = e.message; }
+  finally { busy = false; controls(); }
+}
+function query(event) {
+  event?.preventDefault(); if (busy) return;
+  const params = new URLSearchParams({limit:'50'});
+  for (const key of ['room','kind']) if ($(key).value.trim()) params.set(key, $(key).value.trim());
+  for (const key of ['from','to']) if ($(key).value) params.set(key, new Date($(key).value).getTime());
+  const type = $('view').value;
+  if (type === 'events' && $('amount').value !== '') params.set('minPerPerson', $('amount').value);
+  if (type === 'requests' && $('outcome').value) params.set('outcome', $('outcome').value);
+  activeQuery = {type, params:params.toString()}; cursors = [null]; page = 0; load();
+}
+$('filters').addEventListener('submit', query);
+$('next').onclick = () => { if (busy || !next) return; cursors[++page] = next; load(); };
+$('previous').onclick = () => { if (busy || !page) return; page--; load(); };
+fetch('/pool/api/history/summary', {cache:'no-store'}).then(r => r.json()).then(d => {
+  if (!d.ok) throw new Error(d.msg);
+  $('summary').textContent = '已保存 ' + d.events.total + ' 个不同奖励事件（红包 ' + (d.events.redpockets || 0) + ' 个），' + d.requests.total + ' 条请求记录。逐次记录开始于 ' + stamp(d.requests.since) + '。';
+}).catch(e => { $('summary').textContent = e.message; });
+query();
+</script></body></html>

@@ -1,0 +1,53 @@
+# Local runtime state, account credentials, logs and databases.
+/data/*
+!/data/.gitkeep
+.env
+.env.*
+!.env.example
+*.env
+!*.env.example
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*.log
+*.tmp
+
+# Local archives, generated bundles and unrelated desktop material.
+/archive/
+/apk-analysis/
+/GNN随堂测试/
+/fix_paths.py
+/deploy/instabox/bundle/
+/deploy/instabox/tooling/
+node_modules/
+__pycache__/
+*.py[cod]
+*.exe
+*.dll
+*.pdb
+*.zip
+*.tgz
+*.tar
+*.gz
+*.apk
+
+# Keep written reports and illustrations, omit captured data and trial snapshots.
+/docs/**
+!/docs/**/
+!/docs/**/*.md
+!/docs/**/*.svg
+!/docs/**/*.png
+!/docs/**/*.jpg
+/docs/**/before/
+/docs/**/first-trial/
+# Public API response used by the parser tests and bundle builder.
+!/docs/hot-rank-20261110/api-sample.json
+
+# Keys stay local; these two fixtures belong to an isolated localhost test server.
+*.pem
+*.key
+*.p12
+*.pfx
+!/tests/fixtures/proxy-test-cert.pem
+!/tests/fixtures/proxy-test-key.pem

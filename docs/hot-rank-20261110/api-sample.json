@@ -1,0 +1,823 @@
+{
+  "response": {
+    "data": {
+      "list": [
+        {
+          "rank": 1,
+          "score": 60045,
+          "room_id": 1772921709,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3632315859209034,
+            "base": {
+              "name": "示爱-新厅待冠"
+            }
+          },
+          "area_id": 819,
+          "area_name": "点唱",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 2,
+          "score": 51485,
+          "room_id": 22961145,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 37754047,
+            "base": {
+              "name": "咻咻满"
+            }
+          },
+          "area_id": 145,
+          "area_name": "颜值",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 3,
+          "score": 35149,
+          "room_id": 1841633156,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 57903766,
+            "base": {
+              "name": "软乔一努力版"
+            }
+          },
+          "area_id": 371,
+          "area_name": "虚拟日常",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 4,
+          "score": 31987,
+          "room_id": 1968145160,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3706967400908877,
+            "base": {
+              "name": "星屿漫行社"
+            }
+          },
+          "area_id": 1013,
+          "area_name": "团播",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 5,
+          "score": 31455,
+          "room_id": 22499175,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 488082206,
+            "base": {
+              "name": "冉尘瑶"
+            }
+          },
+          "area_id": 744,
+          "area_name": "虚拟Singer",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 6,
+          "score": 31203,
+          "room_id": 1881083251,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 12191471,
+            "base": {
+              "name": "金月希"
+            }
+          },
+          "area_id": 371,
+          "area_name": "虚拟日常",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 7,
+          "score": 30964,
+          "room_id": 1940892752,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3706993021815471,
+            "base": {
+              "name": "EDEN-Club新厅点唱互动"
+            }
+          },
+          "area_id": 819,
+          "area_name": "点唱",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 8,
+          "score": 30228,
+          "room_id": 1840112976,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3747563154966666,
+            "base": {
+              "name": "茉茉桃momo"
+            }
+          },
+          "area_id": 371,
+          "area_name": "虚拟日常",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 9,
+          "score": 30063,
+          "room_id": 3060036,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 76721667,
+            "base": {
+              "name": "小日和啾"
+            }
+          },
+          "area_id": 530,
+          "area_name": "萌宅领域",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 10,
+          "score": 24104,
+          "room_id": 1854310374,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546886499731456,
+            "base": {
+              "name": "Lllyyku"
+            }
+          },
+          "area_id": 371,
+          "area_name": "虚拟日常",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 11,
+          "score": 24040,
+          "room_id": 1832485095,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3707005929785822,
+            "base": {
+              "name": "绿子10号生日百天版"
+            }
+          },
+          "area_id": 744,
+          "area_name": "虚拟Singer",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 12,
+          "score": 22387,
+          "room_id": 21329290,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 405859497,
+            "base": {
+              "name": "温软Tsuki"
+            }
+          },
+          "area_id": 192,
+          "area_name": "聊天电台",
+          "parent_area_id": 5
+        },
+        {
+          "rank": 13,
+          "score": 16258,
+          "room_id": 1850499463,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 1284769290,
+            "base": {
+              "name": "漆黑之翼の瞬"
+            }
+          },
+          "area_id": 530,
+          "area_name": "萌宅领域",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 14,
+          "score": 16050,
+          "room_id": 1919212636,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3493294193510538,
+            "base": {
+              "name": "红馆-男团点唱"
+            }
+          },
+          "area_id": 819,
+          "area_name": "点唱",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 15,
+          "score": 16004,
+          "room_id": 1840994154,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3747564193057576,
+            "base": {
+              "name": "叙瑶-Caper"
+            }
+          },
+          "area_id": 192,
+          "area_name": "聊天电台",
+          "parent_area_id": 5
+        },
+        {
+          "rank": 16,
+          "score": 15029,
+          "room_id": 1957025868,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3707041986120493,
+            "base": {
+              "name": "沉欲_招主持"
+            }
+          },
+          "area_id": 818,
+          "area_name": "交友",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 17,
+          "score": 14333,
+          "room_id": 1700303534,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546910231104084,
+            "base": {
+              "name": "一见倾心-新厅招主持"
+            }
+          },
+          "area_id": 818,
+          "area_name": "交友",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 18,
+          "score": 14260,
+          "room_id": 31494388,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 27096412,
+            "base": {
+              "name": "亿亿娘娘koi"
+            }
+          },
+          "area_id": 371,
+          "area_name": "虚拟日常",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 19,
+          "score": 13370,
+          "room_id": 883263,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 210752,
+            "base": {
+              "name": "真栗"
+            }
+          },
+          "area_id": 145,
+          "area_name": "颜值",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 20,
+          "score": 13029,
+          "room_id": 1992099816,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3747571774261466,
+            "base": {
+              "name": "欣欣子哇13号满月"
+            }
+          },
+          "area_id": 145,
+          "area_name": "颜值",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 21,
+          "score": 12817,
+          "room_id": 1790370612,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546595083683995,
+            "base": {
+              "name": "芜湖奶芙一耐活溺爱版"
+            }
+          },
+          "area_id": 744,
+          "area_name": "虚拟Singer",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 22,
+          "score": 12106,
+          "room_id": 26805432,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 677465908,
+            "base": {
+              "name": "小七不吃苦哇"
+            }
+          },
+          "area_id": 145,
+          "area_name": "颜值",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 23,
+          "score": 11871,
+          "room_id": 22491717,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 304578055,
+            "base": {
+              "name": "Mr迷瞪"
+            }
+          },
+          "area_id": 646,
+          "area_name": "生活杂谈",
+          "parent_area_id": 10
+        },
+        {
+          "rank": 24,
+          "score": 10988,
+          "room_id": 31443431,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546586363725853,
+            "base": {
+              "name": "羊羊好运咯"
+            }
+          },
+          "area_id": 371,
+          "area_name": "虚拟日常",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 25,
+          "score": 10104,
+          "room_id": 1806913289,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3493146052790385,
+            "base": {
+              "name": "书檀冫"
+            }
+          },
+          "area_id": 744,
+          "area_name": "虚拟Singer",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 26,
+          "score": 10036,
+          "room_id": 1824994851,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3706949413636448,
+            "base": {
+              "name": "YOLO-招主持"
+            }
+          },
+          "area_id": 818,
+          "area_name": "交友",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 27,
+          "score": 9923,
+          "room_id": 1779503770,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 1106034967,
+            "base": {
+              "name": "白柚柚o"
+            }
+          },
+          "area_id": 530,
+          "area_name": "萌宅领域",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 28,
+          "score": 9921,
+          "room_id": 1952673215,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 218105859,
+            "base": {
+              "name": "秋華_Lycor"
+            }
+          },
+          "area_id": 371,
+          "area_name": "虚拟日常",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 29,
+          "score": 9561,
+          "room_id": 1741046786,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3707034201492288,
+            "base": {
+              "name": "小伊饱饱_"
+            }
+          },
+          "area_id": 145,
+          "area_name": "颜值",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 30,
+          "score": 9412,
+          "room_id": 1886946562,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3747581458910666,
+            "base": {
+              "name": "流年-国服韩信"
+            }
+          },
+          "area_id": 35,
+          "area_name": "王者荣耀",
+          "parent_area_id": 3
+        },
+        {
+          "rank": 31,
+          "score": 9377,
+          "room_id": 30892322,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546389235632822,
+            "base": {
+              "name": "吃甜粥的小阿姨"
+            }
+          },
+          "area_id": 145,
+          "area_name": "颜值",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 32,
+          "score": 9300,
+          "room_id": 1881337787,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3706936289659321,
+            "base": {
+              "name": "星娱-春庭雪001"
+            }
+          },
+          "area_id": 1013,
+          "area_name": "团播",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 33,
+          "score": 9068,
+          "room_id": 1747548336,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 302285359,
+            "base": {
+              "name": "星河-001"
+            }
+          },
+          "area_id": 1013,
+          "area_name": "团播",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 34,
+          "score": 8939,
+          "room_id": 1982337937,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 475555410,
+            "base": {
+              "name": "铁锤锤cc_"
+            }
+          },
+          "area_id": 192,
+          "area_name": "聊天电台",
+          "parent_area_id": 5
+        },
+        {
+          "rank": 35,
+          "score": 8778,
+          "room_id": 1713546334,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 1298779265,
+            "base": {
+              "name": "灰泽满Hazel"
+            }
+          },
+          "area_id": 371,
+          "area_name": "虚拟日常",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 36,
+          "score": 8450,
+          "room_id": 1949302086,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3744968478820651,
+            "base": {
+              "name": "弥汐Nyah"
+            }
+          },
+          "area_id": 744,
+          "area_name": "虚拟Singer",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 37,
+          "score": 8419,
+          "room_id": 1943676993,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3707044571908572,
+            "base": {
+              "name": "��御阁-欧阳冠-Aurora冠"
+            }
+          },
+          "area_id": 818,
+          "area_name": "交友",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 38,
+          "score": 8315,
+          "room_id": 1995467771,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546866799086389,
+            "base": {
+              "name": "桃子-ya-"
+            }
+          },
+          "area_id": 207,
+          "area_name": "舞见",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 39,
+          "score": 8214,
+          "room_id": 1743786075,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3706985350432810,
+            "base": {
+              "name": "星系-启明星点唱"
+            }
+          },
+          "area_id": 819,
+          "area_name": "点唱",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 40,
+          "score": 8207,
+          "room_id": 22504377,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 675081568,
+            "base": {
+              "name": "霏若若"
+            }
+          },
+          "area_id": 21,
+          "area_name": "视频唱见",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 41,
+          "score": 8041,
+          "room_id": 1724773036,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546660936354507,
+            "base": {
+              "name": "侠少-Valiant"
+            }
+          },
+          "area_id": 309,
+          "area_name": "植物大战僵尸",
+          "parent_area_id": 6
+        },
+        {
+          "rank": 42,
+          "score": 8038,
+          "room_id": 1917448840,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3706973981771953,
+            "base": {
+              "name": "汶汐Wense"
+            }
+          },
+          "area_id": 371,
+          "area_name": "虚拟日常",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 43,
+          "score": 8035,
+          "room_id": 1905052521,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546618896845782,
+            "base": {
+              "name": "香椰可可卷ff"
+            }
+          },
+          "area_id": 192,
+          "area_name": "聊天电台",
+          "parent_area_id": 5
+        },
+        {
+          "rank": 44,
+          "score": 8013,
+          "room_id": 25229899,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 386402481,
+            "base": {
+              "name": "电子蛇-"
+            }
+          },
+          "area_id": 530,
+          "area_name": "萌宅领域",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 45,
+          "score": 7979,
+          "room_id": 23771139,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 1878154667,
+            "base": {
+              "name": "沐霂是MUMU呀"
+            }
+          },
+          "area_id": 371,
+          "area_name": "虚拟日常",
+          "parent_area_id": 9
+        },
+        {
+          "rank": 46,
+          "score": 7811,
+          "room_id": 31751478,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546607255554887,
+            "base": {
+              "name": "YK-与你邂逅-招战神"
+            }
+          },
+          "area_id": 819,
+          "area_name": "点唱",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 47,
+          "score": 7550,
+          "room_id": 1741047105,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3707053547718878,
+            "base": {
+              "name": "星鸣再临-长明"
+            }
+          },
+          "area_id": 1013,
+          "area_name": "团播",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 48,
+          "score": 6827,
+          "room_id": 24089143,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 203666628,
+            "base": {
+              "name": "Lc-甜心女友-视频厅"
+            }
+          },
+          "area_id": 818,
+          "area_name": "交友",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 49,
+          "score": 6679,
+          "room_id": 1992090630,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 1831042237,
+            "base": {
+              "name": "小魚冻干u"
+            }
+          },
+          "area_id": 530,
+          "area_name": "萌宅领域",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 50,
+          "score": 6584,
+          "room_id": 1731834792,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3706968986356237,
+            "base": {
+              "name": "-臭臭7"
+            }
+          },
+          "area_id": 145,
+          "area_name": "颜值",
+          "parent_area_id": 1
+        }
+      ],
+      "last_top": [
+        {
+          "rank": 1,
+          "score": 77715,
+          "room_id": 1943247666,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546981834164808,
+            "base": {
+              "name": "lw-梦琉璃"
+            }
+          },
+          "area_id": 1013,
+          "area_name": "团播",
+          "parent_area_id": 1
+        },
+        {
+          "rank": 2,
+          "score": 61377,
+          "room_id": 1856654414,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 3546969792318391,
+            "base": {
+              "name": "王者配音社-点唱pia戏"
+            }
+          },
+          "area_id": 819,
+          "area_name": "点唱",
+          "parent_area_id": 14
+        },
+        {
+          "rank": 3,
+          "score": 41012,
+          "room_id": 26156384,
+          "live_status": 1,
+          "uinfo": {
+            "uid": 1925369895,
+            "base": {
+              "name": "马天琦-"
+            }
+          },
+          "area_id": 145,
+          "area_name": "颜值",
+          "parent_area_id": 1
+        }
+      ],
+      "current_room": {
+        "rank": 0,
+        "score": 1875,
+        "room_id": 1837229404,
+        "live_status": 1,
+        "uinfo": {
+          "uid": 3632305195190283,
+          "base": {
+            "name": "天降小卷饼"
+          }
+        },
+        "area_id": 207,
+        "area_name": "舞见",
+        "parent_area_id": 1
+      },
+      "interval_time": 15,
+      "countdown": 190,
+      "anchor_permission": true
+    }
+  }
+}

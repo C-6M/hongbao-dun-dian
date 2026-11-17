@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>接入 QQ 官方机器人 · 红包蹲点</title>
+<style>body{background:#10151d;color:#e8edf5;font:16px/1.7 system-ui,sans-serif;margin:0}main{max-width:650px;margin:48px auto;padding:28px;background:#19212d;border-radius:16px}h1{font-size:25px;margin-top:0}label{display:block;margin:16px 0}input{display:block;box-sizing:border-box;width:100%;background:#10151d;color:inherit;border:1px solid #526077;border-radius:8px;padding:12px;font:inherit;margin-top:5px}button{background:#64d2ae;border:0;color:#10211c;padding:12px 20px;border-radius:8px;font:inherit;cursor:pointer}button:disabled{opacity:.5}small,.muted{color:#a8b5c7}code{display:block;padding:14px;background:#10151d;overflow-wrap:anywhere;border-radius:8px}a{color:#64d2ae}#status{white-space:pre-line}p{margin:16px 0}</style>
+<main><h1>接入 QQ 官方机器人</h1><p>目标：莓来-推送群（1127875934）。接入后继续使用主播名字、金额筛选、至少剩余 2 分钟和红包查重。</p>
+<form id="form"><label>AppID<input id="appId" inputmode="numeric" autocomplete="off" required></label>
+<label>AppSecret<input id="appSecret" type="password" autocomplete="off" placeholder="只保存在本机；已保存时可留空"></label>
+<button id="save">保存并连接</button><p class="muted">凭证只发送到这台电脑的本地服务，页面不会回显 AppSecret。</p></form>
+<p id="status" role="status">正在读取连接状态…</p>
+<div id="binding" hidden><p>在“莓来-推送群”中，由群主或管理员 <strong>@你的机器人</strong>，发送下面的绑定命令：</p><code id="command"></code>
+<p class="muted">请群主同时开启“允许主动发送消息”和“接收群内全部消息”。收到绑定命令后自动切换到官方推送。</p></div>
+<p><a href="/pool">返回红包看板</a></p></main>
+<script>
+const $=id=>document.getElementById(id);let editing=false,saving=false;
+$('form').addEventListener('input',()=>{editing=true;});
+async function refresh(){try{const r=await fetch('/pool/api/qq-bot',{cache:'no-store'}),d=await r.json();if(!r.ok||!d.ok)throw new Error(d.msg||'读取失败');
+if(!editing)$('appId').value=d.config.appId;$('binding').hidden=!d.config.configured||d.config.bound;$('command').textContent=d.config.bindingCommand;
+const b=d.status||{};$('status').textContent=!d.config.configured?'请填写机器人凭证。':(b.error||(!b.connected?'等待官方机器人连接…':!d.config.bound?'连接成功，等待目标群绑定。':!b.fullMessages?'已绑定，等待群全量消息；请检查群主设置。':'官方机器人已连接，目标群已绑定，红包自动推送已就绪。'));
+}catch(e){$('status').textContent=e.message;}}
+$('form').addEventListener('submit',async e=>{e.preventDefault();if(saving)return;saving=true;$('save').disabled=true;$('status').textContent='正在保存并连接…';
+try{const r=await fetch('/pool/api/qq-bot',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({appId:$('appId').value,appSecret:$('appSecret').value})}),d=await r.json();if(!r.ok||!d.ok)throw new Error(d.msg||'保存失败');$('appSecret').value='';editing=false;await refresh();}catch(e){$('status').textContent=e.message;}finally{saving=false;$('save').disabled=false;}});
+refresh();setInterval(()=>{if(!saving)refresh();},2000);
+</script></html>

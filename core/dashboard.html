@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>红包蹲点 · 实时看板</title>
+<style>
+:root{
+  --bg:#0b0e14; --card:#131722; --card2:#1a1f2e; --line:#232a3b;
+  --fg:#e8eefc; --dim:#7d8aa3; --ok:#2fd47a; --bad:#f4555c; --warn:#f5b32e;
+  --acc:#5b8cff; --gold:#ffd166; --purple:#a78bfa;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
+body{
+  font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  padding:18px 18px 48px; max-width:1280px; margin:0 auto;
+}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.4px}
+h1 em{font-style:normal;color:var(--acc)}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 1.6s infinite}
+.dot.off{background:var(--bad);box-shadow:0 0 8px var(--bad);animation:none}
+.dot.paused{background:var(--warn);box-shadow:none;animation:none}
+.scan-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.scan-controls button{border:1px solid rgba(245,179,46,.4);border-radius:7px;background:rgba(245,179,46,.12);color:var(--gold);padding:7px 12px;font:inherit;font-size:12px;cursor:pointer}
+.scan-controls button.resume{border-color:rgba(47,212,122,.4);background:rgba(47,212,122,.12);color:var(--ok)}
+.scan-controls button:disabled{opacity:.5;cursor:default}
+.scan-controls span{font-size:12px;color:var(--dim)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat .k{font-size:11px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase}
+.stat .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.stat .v small{font-size:12px;color:var(--dim);font-weight:500}
+
+.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:940px){.grid{grid-template-columns:1fr}}
+/* 左右两栏各自纵向排列，避免右栏比左栏长时下方留大片空白 */
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 14px 10px}
+/* 主卡片：电池红包，加高亮边框 */
+.card.primary{border-color:rgba(255,209,102,.35);background:linear-gradient(180deg,rgba(255,209,102,.05),var(--card) 60px)}
+/* 折叠卡片：天选等次要内容 */
+details.fold{padding:0}
+details.fold>summary{
+  list-style:none;cursor:pointer;padding:12px 14px;
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  font-size:13px;font-weight:650;color:var(--dim);user-select:none;
+}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"▸ ";color:var(--dim);margin-right:2px}
+details.fold[open]>summary::before{content:"▾ "}
+details.fold>summary em{font-style:normal;color:var(--fg);font-weight:700}
+details.fold>div{padding:0 14px 10px}
+details.fold>summary:hover{color:var(--fg)}
+.card h2{
+  font-size:13px;margin:0 0 10px;font-weight:650;color:var(--dim);
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+}
+.card h2 em{font-style:normal;color:var(--fg);font-weight:700;font-size:13px}
+.pill{font-size:11px;padding:1px 8px;border-radius:99px;border:1px solid var(--line);color:var(--dim);font-variant-numeric:tabular-nums}
+.pill.hot{background:rgba(245,179,46,.14);color:var(--gold);border-color:rgba(245,179,46,.3)}
+.pill.ok{background:rgba(47,212,122,.13);color:var(--ok);border-color:rgba(47,212,122,.3)}
+
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+#rp{overflow-x:auto}
+th{text-align:left;font-size:11px;color:var(--dim);font-weight:500;padding:0 6px 7px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 6px;font-size:12.5px;border-bottom:1px solid rgba(35,42,59,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:rgba(91,140,255,.06)}
+/* 电池红包行：左侧金色竖条 + 淡金底，一眼能挑出来 */
+tr.battery-row td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
+tr.battery-row td{background:rgba(255,209,102,.045)}
+tr.battery-row:hover td{background:rgba(255,209,102,.09)}
+td.r,th.r{text-align:right}
+a.rl{color:var(--acc);text-decoration:none;border-bottom:1px dotted rgba(91,140,255,.4)}
+a.rl:hover{color:#8fb0ff}
+
+.tag{font-size:11px;padding:1px 7px;border-radius:5px;background:rgba(91,140,255,.15);color:#9dbdff;display:inline-block}
+.tag.money{background:rgba(255,209,102,.15);color:var(--gold)}
+.tag.free{background:rgba(47,212,122,.14);color:var(--ok)}
+.tag.fans{background:rgba(167,139,250,.16);color:var(--purple)}
+.tag.qq{background:rgba(18,183,245,.16);color:#4cc9f0;font-size:10px;padding:0 5px;margin-left:3px;font-weight:600}
+
+.money{color:var(--gold);font-weight:650}
+.ev{color:var(--ok);font-weight:650}
+.cd{font-variant-numeric:tabular-nums;font-weight:600}
+.cd.urgent{color:var(--bad);animation:pulse 1s infinite}
+.cd.soon{color:var(--warn)}
+
+.empty{color:var(--dim);font-size:12.5px;padding:22px 6px;text-align:center}
+.empty .hint{display:block;margin-top:6px;font-size:11.5px;opacity:.65}
+
+/* 节点 */
+.nodes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px}
+.node{background:var(--card2);border:1px solid transparent;border-radius:8px;padding:7px 9px;font-size:11.5px}
+.node.cur{border-color:rgba(91,140,255,.6);background:linear-gradient(90deg,rgba(91,140,255,.12),var(--card2))}
+.node.banned{opacity:.45}
+.node .nm{display:flex;align-items:center;gap:5px;font-weight:600;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node .ip{color:var(--dim);font-size:10.5px;font-variant-numeric:tabular-nums;margin-top:1px}
+.bar{height:3px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:2px;transition:width .3s}
+.bar i.hi{background:var(--bad)}
+
+/* 房间池 */
+.pool{display:flex;gap:8px;margin-top:4px}
+.pool div{flex:1;text-align:center;padding:8px 4px;border-radius:8px;background:var(--card2)}
+.pool .n{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.pool .l{font-size:10.5px;color:var(--dim);margin-top:1px}
+.pool .hot .n{color:var(--gold)}
+.pool .warm .n{color:var(--acc)}
+.pool .priority .n{color:var(--acc)}
+.pool .cold .n{color:var(--dim)}
+
+footer{color:var(--dim);font-size:11.5px;text-align:center;margin-top:20px;line-height:1.7}
+.mono{font-variant-numeric:tabular-nums}
+.notice-fields{border:0;padding:0;margin:0;min-width:0}
+.notice-toggle{display:flex;align-items:center;gap:9px;font-weight:600;margin-bottom:14px;cursor:pointer}
+.notice-toggle input{width:18px;height:18px;accent-color:var(--acc)}
+.notice-inputs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.notice-inputs label{font-size:12px;color:var(--dim)}
+.notice-inputs input{display:block;width:100%;margin-top:5px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:8px;font:inherit;font-size:14px}
+.notice-inputs input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.notice-help{color:var(--dim);font-size:12px;margin:10px 0}
+.notice-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.notice-actions button{border:0;border-radius:7px;background:var(--acc);color:white;font:inherit;font-size:12px;padding:8px 14px;cursor:pointer}
+.notice-actions button:disabled{opacity:.5;cursor:default}
+.notice-status{font-size:12px;color:var(--dim)}
+.push-block-label{display:block;color:var(--dim);font-size:12px}
+.push-block-input{display:block;width:100%;min-height:110px;margin-top:6px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:10px;font:inherit;font-size:14px;resize:vertical}
+.push-block-input:focus{outline:2px solid var(--acc);outline-offset:1px}
+@media(max-width:420px){.notice-inputs{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>红包<em>蹲点</em></h1>
+  <span class="live"><span class="dot" id="dot"></span><span id="meta">连接中…</span></span>
+  <span class="pill hot" id="notification-state" aria-live="polite">桌面提醒加载中…</span>
+  <div class="scan-controls"><button type="button" id="scan-toggle" disabled title="暂停后停止新请求，已发出的请求会完成；开关重启后保留。">扫描开关加载中…</button><span id="scan-status" role="status" aria-live="polite">加载中…</span></div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="k">本轮</div><div class="v" id="s-round">—</div></div>
+  <div class="stat"><div class="k">成功查询</div><div class="v" id="s-scanned">—</div></div>
+  <div class="stat"><div class="k">活跃红包</div><div class="v" id="s-active">—</div></div>
+  <div class="stat"><div class="k">累计发现</div><div class="v" id="s-hit">—</div></div>
+  <div class="stat"><div class="k">本轮耗时</div><div class="v" id="s-ms">—<small>s</small></div></div>
+  <div class="stat"><div class="k">总请求</div><div class="v" id="s-req">—</div></div>
+  <div class="stat"><div class="k">风控</div><div class="v" id="s-ban">—</div></div>
+</div>
+
+<div class="grid">
+  <div class="col">
+    <section class="card" aria-labelledby="notice-heading">
+      <h2><em id="notice-heading">桌面通知设置</em></h2>
+      <form id="notification-form">
+        <fieldset class="notice-fields" id="notice-fields" disabled>
+          <label class="notice-toggle"><input type="checkbox" id="notice-enabled">开启桌面通知</label>
+          <div class="notice-inputs">
+            <label for="notice-per-person">最低人均电池<input id="notice-per-person" type="number" min="0" max="100000000" step="any" required value="10"></label>
+            <label for="notice-battery">最低总电池<input id="notice-battery" type="number" min="0" max="100000000" step="any" required value="0"></label>
+            <label for="notice-seconds">最少剩余秒数<input id="notice-seconds" type="number" min="0" max="86400" step="1" required value="0"></label>
+          </div>
+          <p class="notice-help">以下人均门槛用于桌面通知；QQ 人均门槛可在下方单独设置。最低总电池和剩余时间仍共用，开关各自独立。全部条件同时满足才发送，包含等于；填 0 表示不限。电池红包已排除大航海等特殊条件，关注和普通粉丝团保留。</p>
+          <p class="notice-help" id="notice-rule-summary"></p>
+          <div class="notice-actions"><button id="notice-save" type="submit">保存设置</button><span class="notice-status" id="notice-save-status" role="status" aria-live="polite">加载中…</span></div>
+        </fieldset>
+      </form>
+      <p class="notice-help">保存后约 2 秒内生效，无需重启。同一红包只提醒一次。</p>
+    </section>
+    <section class="card" aria-labelledby="qq-forward-heading">
+      <h2><em id="qq-forward-heading">QQ 群自动推送</em></h2>
+      <form id="qq-forward-form">
+        <fieldset class="notice-fields" id="qq-forward-fields" disabled>
+          <label class="notice-toggle"><input type="checkbox" id="qq-forward-enabled">开启 QQ 群自动推送</label>
+          <div class="notice-inputs"><label for="qq-forward-per-person">QQ 最低人均电池<input id="qq-forward-per-person" type="number" min="0" max="100000000" step="any" placeholder="留空沿用桌面通知门槛"></label></div>
+          <p class="notice-help">目标：莓来-推送群（1127875934）。QQ 人均门槛填 2 可纳入 100 电池、50 份的红包；留空沿用上方人均门槛，填 0 不限制人均。总电池和剩余时间仍使用上方条件。达标后立即查询观众人数，按主播名字、门槛和人数的格式推送；关闭桌面通知不影响 QQ 推送，群里发过的自动跳过。</p>
+          <div class="notice-actions"><button type="submit">保存设置</button><span class="notice-status" id="qq-forward-save-status" role="status" aria-live="polite">加载中…</span></div>
+        </fieldset>
+      </form>
+      <p class="notice-help" id="qq-forward-help">首次使用请双击“启动QQ自动推送.bat”。本机发送需要电脑解锁、QQ 登录和目标群独立窗口；官方机器人接入后无需打开 QQ 窗口。相同红包只推送一次。</p>
+      <p class="notice-help" id="qq-forward-runtime" role="status" aria-live="polite">推送状态加载中…</p>
+      <p class="notice-help"><a href="/pool/qq-bot">配置 QQ 官方机器人</a></p>
+      <details id="qq-push-block-panel" open>
+        <summary>推送屏蔽房间</summary>
+        <form id="qq-push-block-form">
+          <fieldset class="notice-fields" id="qq-push-block-fields" disabled>
+            <label class="push-block-label" for="qq-push-block-rooms">填写要屏蔽的 B 站房间号<textarea class="push-block-input" id="qq-push-block-rooms" rows="4" placeholder="1741667419&#10;123456" spellcheck="false" aria-describedby="qq-push-block-help"></textarea></label>
+            <p class="notice-help" id="qq-push-block-help">每行一个，也可用空格或逗号分隔。保存后这些房间不再推送到 QQ 群；删除房间号再保存即可解除。设置重启后保留。</p>
+            <div class="notice-actions"><button type="submit">保存屏蔽名单</button><span class="notice-status" id="qq-push-block-status" role="status" aria-live="polite">加载中…</span></div>
+          </fieldset>
+        </form>
+      </details>
+    </section>
+    <div class="card primary">
+      <h2><em>💰 电池红包</em><span class="pill hot" id="p-rp">—</span></h2>
+      <p class="notice-help">在线榜人数来自互动榜，非抽奖参与人数；悬停可查看更新时间。</p>
+      <div id="rp"><div class="empty">等待数据…</div></div>
+    </div>
+
+    <div class="card">
+      <h2><em>刚刚结束</em><span class="pill" id="p-exp">—</span></h2>
+      <div id="exp"><div class="empty">暂无</div></div>
+    </div>
+
+    <details class="card fold">
+      <summary><em>🎁 天选时刻</em><span class="pill" id="p-an">—</span></summary>
+      <div id="an"><div class="empty">等待数据…</div></div>
+    </details>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <h2><em>房间池</em><span class="pill" id="p-pool">—</span></h2>
+      <div class="pool">
+        <div class="hot"><div class="n" id="p-hot">0</div><div class="l">HOT 优先复查</div></div>
+        <div class="warm"><div class="n" id="p-warm">0</div><div class="l">WARM 定期复查</div></div>
+        <div class="priority"><div class="n" id="p-priority">0</div><div class="l">榜单优先（冷池内）</div></div>
+        <div class="cold"><div class="n" id="p-cold">0</div><div class="l">COLD 轮巡探索</div></div>
+      </div>
+      <div id="scan-plan" style="padding:0 16px 14px;color:var(--dim);font-size:12px;line-height:1.7"></div>
+      <div id="source-status" style="padding:0 16px 14px;color:var(--dim);font-size:12px;line-height:1.7"></div>
+    </div>
+
+    <div class="card">
+      <h2><em>出口节点</em><span class="pill" id="p-node">—</span></h2>
+      <div class="nodes" id="nodes"><div class="empty">等待数据…</div></div>
+    </div>
+
+    <div class="card">
+      <h2><em>最近发现</em><span class="pill" id="p-hist">—</span></h2>
+      <p class="notice-help"><a href="/pool/history">查询长期红包和扫描记录 →</a></p>
+      <p class="notice-help" id="history-storage" role="status"></p>
+      <div id="hist"><div class="empty">还没有记录</div></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div>数据每 <b id="refresh">2</b> 秒刷新 · 扫描器需单独运行 <code>node spider.js</code></div>
+  <div id="updated" style="margin-top:4px"></div>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let savedScanSettings = null, scanSaving = false, scanPending = false, scanError = '', lastScanState = null;
+function renderScanControl(d = lastScanState) {
+  lastScanState = d;
+  const running = d && Date.now() - d.updated <= 30000 && !['stopped', 'storage_error'].includes(d.phase);
+  if (savedScanSettings && running && d.scan && !scanSaving && !scanError) {
+    if (scanPending && d.scan.enabled === savedScanSettings.enabled && !d.scan.settingsError) scanPending = false;
+    if (!scanPending) savedScanSettings = { enabled: d.scan.enabled };
+  }
+  const enabled = savedScanSettings?.enabled;
+  $('scan-toggle').textContent = savedScanSettings ? (enabled ? '暂停扫描' : '继续扫描') : '扫描开关加载中…';
+  $('scan-toggle').className = enabled === false ? 'resume' : '';
+  $('scan-toggle').disabled = !savedScanSettings || scanSaving || (scanPending && running);
+  $('scan-status').textContent = scanError || d?.scan?.settingsError
+    || (scanSaving ? '正在保存…'
+      : !savedScanSettings ? '加载中…'
+      : !running || !d.scan ? '已保存，等待扫描器启动'
+      : scanPending ? (enabled ? '等待恢复扫描…' : '等待暂停扫描…')
+      : !enabled ? (d.scan.inFlight ? '暂停中，等待已发出的请求完成' : '已暂停')
+      : '已开启');
+  $('scan-status').style.color = scanError || d?.scan?.settingsError ? 'var(--bad)' : '';
+}
+async function loadScanSettings() {
+  try {
+    const response = await fetch('/pool/api/scan-settings', { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.msg || '读取失败');
+    savedScanSettings = data.settings;
+    scanPending = true;
+  } catch (e) { scanError = '扫描开关加载失败：' + e.message; }
+  renderScanControl();
+}
+$('scan-toggle').addEventListener('click', async () => {
+  if (!savedScanSettings || scanSaving) return;
+  const settings = { enabled: !savedScanSettings.enabled };
+  scanSaving = true; scanError = ''; renderScanControl();
+  try {
+    const response = await fetch('/pool/api/scan-settings', { method: 'PUT',
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify(settings) });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.msg || '保存失败');
+    savedScanSettings = data.settings; scanPending = true;
+  } catch (e) { scanError = '扫描开关保存失败：' + e.message; }
+  finally { scanSaving = false; renderScanControl(); }
+});
+loadScanSettings();
+
+let savedNoticeSettings = null, noticeDirty = false, noticeSaving = false, lastNoticeState = null;
+function readNoticeForm() {
+  return { enabled: $('notice-enabled').checked, minPerPerson: Number($('notice-per-person').value),
+    minBattery: Number($('notice-battery').value), minRemainingSeconds: Number($('notice-seconds').value) };
+}
+function noticeRuleText(s) {
+  const desktop = s.enabled ? '桌面通知已开启。' : '桌面通知已关闭。';
+  const parts = [];
+  if (s.minPerPerson > 0) parts.push('人均 ≥' + s.minPerPerson + ' 电池');
+  if (s.minBattery > 0) parts.push('总额 ≥' + s.minBattery + ' 电池');
+  if (s.minRemainingSeconds > 0) parts.push('剩余 ≥' + s.minRemainingSeconds + ' 秒');
+  return desktop + (parts.length ? '桌面通知条件：' + parts.join('，且') + '；总额和剩余时间也用于 QQ 推送。' : '桌面通知不限制金额和剩余时间；QQ 人均门槛以下方设置为准。');
+}
+function noticeStatus(text, error = false) {
+  $('notice-save-status').textContent = text;
+  $('notice-save-status').style.color = error ? 'var(--bad)' : 'var(--dim)';
+}
+function updateNoticeApplied(d) {
+  lastNoticeState = d;
+  if (noticeDirty || noticeSaving || !savedNoticeSettings) return;
+  if (d.notifications?.settingsError) { noticeStatus('设置读取失败：' + d.notifications.settingsError, true); return; }
+  if (d.phase === 'stopped' || Date.now() - d.updated > 30000) { noticeStatus('已保存，等待扫描器启动'); return; }
+  const applied = d.notifications?.settings;
+  noticeStatus(applied && Object.keys(savedNoticeSettings).every(k => applied[k] === savedNoticeSettings[k])
+    ? '已生效' : '已保存，等待扫描器应用');
+}
+async function loadNoticeSettings() {
+  try {
+    const response = await fetch('/pool/api/notification-settings', { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.msg || '读取失败');
+    savedNoticeSettings = data.settings;
+    $('notice-enabled').checked = data.settings.enabled;
+    $('notice-per-person').value = data.settings.minPerPerson;
+    $('notice-battery').value = data.settings.minBattery;
+    $('notice-seconds').value = data.settings.minRemainingSeconds;
+    $('notice-fields').disabled = false;
+    $('notice-rule-summary').textContent = noticeRuleText(data.settings);
+    noticeStatus('设置已加载');
+    if (lastNoticeState) updateNoticeApplied(lastNoticeState);
+  } catch (e) { noticeStatus('加载失败：' + e.message + '；请刷新重试', true); }
+}
+$('notification-form').addEventListener('input', () => {
+  noticeDirty = true;
+  noticeStatus('有修改，点击保存后生效');
+  $('notice-rule-summary').textContent = '预览：' + noticeRuleText(readNoticeForm());
+});
+$('notification-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (noticeSaving || !$('notification-form').reportValidity()) return;
+  const settings = readNoticeForm();
+  noticeSaving = true;
+  $('notice-fields').disabled = true;
+  noticeStatus('正在保存…');
+  try {
+    const response = await fetch('/pool/api/notification-settings', { method: 'PUT',
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify(settings) });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.msg || '保存失败');
+    savedNoticeSettings = data.settings;
+    noticeDirty = false;
+    $('notice-rule-summary').textContent = noticeRuleText(data.settings);
+    noticeStatus('已保存，等待扫描器应用');
+  } catch (e) { noticeDirty = true; noticeStatus('保存失败：' + e.message, true); }
+  finally { noticeSaving = false; $('notice-fields').disabled = false; }
+});
+loadNoticeSettings();
+
+let qqSaved = null, qqDirty = false, qqSaving = false;
+function qqSaveStatus(text, error = false) {
+  $('qq-forward-save-status').textContent = text;
+  $('qq-forward-save-status').style.color = error ? 'var(--bad)' : 'var(--dim)';
+}
+async function loadQQSettings() {
+  try {
+    const response = await fetch('/pool/api/qq-forward-settings', { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.msg || '读取失败');
+    qqSaved = data.settings;
+    $('qq-forward-enabled').checked = qqSaved.enabled;
+    $('qq-forward-per-person').value = qqSaved.minPerPerson ?? '';
+    $('qq-forward-fields').disabled = false;
+    qqSaveStatus('已保存');
+  } catch (e) { qqSaveStatus('加载失败：' + e.message, true); }
+}
+async function loadQQStatus() {
+  try {
+    const response = await fetch('/pool/api/qq-forward-status', { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.msg || '读取失败');
+    const enabled = qqSaved?.enabled;
+    const official = data.transport === 'official';
+    $('qq-forward-help').textContent = official
+      ? '使用 QQ 官方机器人。群主需允许主动消息并开启接收群内全部消息；新红包按 QQ 人均门槛、上方总额和剩余时间条件筛选并查重。'
+      : '本机发送需要电脑解锁、QQ 登录和目标群独立窗口；已有草稿时等待。相同红包只推送一次。';
+    const error = data.readiness?.error || data.lastError;
+    const status = !enabled ? '已关闭' : !data.running ? '请双击“启动QQ自动推送.bat”'
+      : data.readiness?.ready === false ? (official ? '等待官方机器人就绪' : '等待 QQ 就绪')
+      : data.enabled ? (data.audienceLookup?.stage === 'querying' ? '正在查询观众人数 · 房间 ' + data.audienceLookup.room : '自动推送中')
+      : '等待扫描恢复或新的有效扫描结果';
+    $('qq-forward-runtime').textContent = status + ' · 已确认 ' + (data.sent || 0) + ' 条'
+      + ' · 查重跳过 ' + (data.skipped || 0) + ' 条'
+      + ' · 待核对 ' + (data.uncertain || 0) + ' 条'
+      + (error ? ' · ' + error : '');
+    $('qq-forward-runtime').style.color = enabled && (!data.running || error) ? 'var(--bad)' : '';
+  } catch (e) { $('qq-forward-runtime').textContent = '读取推送状态失败：' + e.message; }
+}
+$('qq-forward-form').addEventListener('input', () => {
+  qqDirty = true; qqSaveStatus('有修改，点击保存后生效');
+});
+$('qq-forward-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (qqSaving || !$('qq-forward-form').reportValidity()) return;
+  qqSaving = true; $('qq-forward-fields').disabled = true; qqSaveStatus('正在保存…');
+  try {
+    const response = await fetch('/pool/api/qq-forward-settings', { method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ enabled: $('qq-forward-enabled').checked,
+        minPerPerson: $('qq-forward-per-person').value.trim() === '' ? null : Number($('qq-forward-per-person').value) }) });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.msg || '保存失败');
+    qqSaved = data.settings; qqDirty = false; qqSaveStatus('已保存，约 2 秒内生效');
+    await loadQQStatus();
+  } catch (e) { qqSaveStatus('保存失败：' + e.message, true); }
+  finally { qqSaving = false; $('qq-forward-fields').disabled = false; }
+});
+loadQQSettings().then(loadQQStatus);
+setInterval(loadQQStatus, 2000);
+
+let pushBlockSaving = false;
+function pushBlockStatus(text, error = false) {
+  $('qq-push-block-status').textContent = text;
+  $('qq-push-block-status').style.color = error ? 'var(--bad)' : 'var(--dim)';
+}
+function showPushBlockRooms(settings) {
+  $('qq-push-block-rooms').value = settings.rooms.join('\n');
+  pushBlockStatus('已保存 · 屏蔽 ' + settings.rooms.length + ' 个房间');
+}
+async function loadPushBlockRooms() {
+  try {
+    const response = await fetch('/pool/api/qq-push-blocklist', { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.msg || '读取失败');
+    showPushBlockRooms(data.settings); $('qq-push-block-fields').disabled = false;
+  } catch (error) { pushBlockStatus('加载失败：' + error.message + '；请刷新重试', true); }
+}
+$('qq-push-block-form').addEventListener('input', () => pushBlockStatus('有修改，点击保存后生效'));
+$('qq-push-block-form').addEventListener('submit', async event => {
+  event.preventDefault(); if (pushBlockSaving) return;
+  const rooms = $('qq-push-block-rooms').value.trim().split(/[\s,，;；]+/).filter(Boolean);
+  if (rooms.some(room => !/^\d{1,12}$/.test(room) || Number(room) === 0)) {
+    pushBlockStatus('请输入有效的数字房间号，每行一个；直播链接请只填写末尾的房间号', true); return;
+  }
+  pushBlockSaving = true; $('qq-push-block-fields').disabled = true; pushBlockStatus('正在保存…');
+  try {
+    const response = await fetch('/pool/api/qq-push-blocklist', { method: 'PUT',
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify({ rooms }) });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.msg || '保存失败');
+    showPushBlockRooms(data.settings); pushBlockStatus('已保存 · 屏蔽 ' + data.settings.rooms.length + ' 个房间，约 2 秒内生效');
+  } catch (error) { pushBlockStatus('保存失败：' + error.message, true); }
+  finally { pushBlockSaving = false; $('qq-push-block-fields').disabled = false; }
+});
+loadPushBlockRooms();
+
+// ── 倒计时（本地 tick，不依赖轮询）────────────────────────────
+const deadlines = new Map(); // key -> endTime(ms)
+function tickCountdowns(){
+  const now = Date.now();
+  document.querySelectorAll('[data-cd]').forEach(el => {
+    const k = el.getAttribute('data-cd');
+    const end = deadlines.get(k);
+    if (!end) return;
+    const left = Math.floor((end - now) / 1000);
+    if (left <= 0){ el.textContent = '已结束'; el.className = 'cd'; return; }
+    const h = Math.floor(left / 3600), m = Math.floor((left % 3600) / 60), s = left % 60;
+    el.textContent = h > 0
+      ? h + 'h' + String(m).padStart(2,'0') + 'm'
+      : m + 'm' + String(s).padStart(2,'0') + 's';
+    el.className = 'cd' + (left < 60 ? ' urgent' : left < 300 ? ' soon' : '');
+  });
+}
+setInterval(tickCountdowns, 250);
+
+function money(bat){
+  const b = Number(bat) || 0;
+  if (b >= 100) return (Math.round(b*100)/100) + ' 电池';
+  let t = b.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+  return (t || '0') + ' 电池';
+}
+
+function gateText(r){
+  const jr = r.join_requirement;
+  if (jr === 2 || jr === '2') return '<span class="tag fans">粉丝团</span>';
+  if (jr === 1 || jr === '1') return '<span class="tag free">关注</span>';
+  if (jr == null || jr === 0 || jr === '0') return '<span class="tag free">无门槛</span>';
+  return '<span class="tag">特殊</span>';
+}
+
+function roomLink(id){
+  const v = String(id || '').replace(/[^0-9]/g,'');
+  if (!v) return '—';
+  return '<a class="rl" href="https://live.bilibili.com/' + v + '" target="_blank" rel="noopener noreferrer">' + v + '</a>';
+}
+
+// ── 渲染电池红包（主目标）────────────────────────────────────────
+function audienceText(audience) {
+  if (!audience || !Number.isSafeInteger(audience.count) || audience.count < 0) return '待更新';
+  const age = Math.max(0, Math.floor((Date.now() - audience.observedAt) / 1000));
+  const when = age < 60 ? age + '秒前' : Math.floor(age / 60) + '分钟前';
+  return '<span title="互动榜人数，非抽奖参与人数；' + when + '更新">'
+    + audience.count.toLocaleString() + (audience.stale ? ' <span style="color:var(--dim);font-size:11px">(' + when + ')</span>' : '') + '</span>';
+}
+
+function renderRP(list){
+  // 电池红包优先：按"每人收益"降序，收益高的排前面
+  const sorted = list.slice().sort((a, b) => (b.per_person || 0) - (a.per_person || 0));
+  const batteryOnly = sorted.filter(r => /电池/.test(r.award_name || ''));
+  const others = sorted.filter(r => !/电池/.test(r.award_name || ''));
+
+  $('p-rp').textContent = list.length
+    ? (batteryOnly.length ? batteryOnly.length + ' 电池包' : '') +
+      (others.length ? (batteryOnly.length ? ' · ' : '') + others.length + ' 其他' : '')
+    : '空';
+
+  if (!list.length){
+    const st = lastStats || {};
+    $('rp').innerHTML = '<div class="empty">'
+      + '当前没有进行中的红包'
+      + '<span class="hint">已扫 ' + (st.scanned || 0) + ' 房间 · 本轮 ' + ((st.lastRoundMs || 0)/1000).toFixed(1) + 's · 风控 ' + (st.banned || 0) + '</span>'
+      + '<span class="hint">电池红包出现后会立即显示在这里</span>'
+      + '</div>';
+    return;
+  }
+
+  const rows = (arr, isBattery) => arr.map(r => {
+    const key = 'rp-' + r.lid;
+    deadlines.set(key, (r.end_time || 0) * 1000);
+    const qq = Number(r.qqPushes) || 0;
+    const qqTag = qq > 0
+      ? ' <span class="tag qq" title="QQ群推送过 ' + qq + ' 次">Q' + qq + '</span>'
+      : '';
+    return '<tr' + (isBattery ? ' class="battery-row"' : '') + '>'
+      + '<td>' + roomLink(r.room_id) + qqTag + '</td>'
+      + '<td class="r">' + audienceText(r.audience) + '</td>'
+      + '<td><span class="tag ' + (isBattery ? 'money' : '') + '">' + esc(r.award_name || '—') + '</span></td>'
+      + '<td>' + gateText(r) + '</td>'
+      + '<td class="r money">' + money(r.battery) + '</td>'
+      + '<td class="r">' + (r.award_num || '—') + '</td>'
+      + '<td class="r ev">' + money(r.per_person) + '</td>'
+      + '<td class="r"><span class="cd" data-cd="' + key + '">计算中</span></td>'
+      + '</tr>';
+  }).join('');
+
+  let h = '<table><thead><tr>'
+    + '<th>房间</th><th class="r" title="互动榜返回的人数，不是抽奖参与人数">在线榜人数</th><th>奖项</th><th>门槛</th>'
+    + '<th class="r">总价</th><th class="r">名额</th><th class="r">每人</th>'
+    + '<th class="r">剩余</th></tr></thead><tbody>';
+  h += rows(batteryOnly, true);
+  h += rows(others, false);
+  h += '</tbody></table>';
+  $('rp').innerHTML = h;
+  tickCountdowns();
+}
+
+// ── 渲染天选（次要目标，折叠显示）──────────────────────────────
+function renderAN(list){
+  $('p-an').textContent = list.length ? list.length + ' 个' : '空';
+  if (!list.length){
+    $('an').innerHTML = '<div class="empty">当前没有进行中的天选<span class="hint">每 ' + (lastStats.anchorEveryRounds || 12) + ' 轮扫描一次（次要目标）</span></div>';
+    return;
+  }
+  let h = '<table><thead><tr>'
+    + '<th>房间</th><th>奖项</th><th>要求</th><th class="r">名额</th><th class="r">已参与</th><th class="r">剩余</th>'
+    + '</tr></thead><tbody>';
+  for (const a of list){
+    const key = 'an-' + a.lid;
+    deadlines.set(key, (a.expireAt || 0));
+    const req = (a.require_text || '').replace('主播','');
+    const cls = /关注/.test(req) ? 'free' : /粉丝团/.test(req) ? 'fans' : '';
+    h += '<tr>'
+      + '<td>' + roomLink(a.room_id) + '</td>'
+      + '<td>' + esc(a.award_name || '—') + '</td>'
+      + '<td><span class="tag ' + cls + '">' + esc(req || '—') + '</span></td>'
+      + '<td class="r">' + (a.award_num || '—') + '</td>'
+      + '<td class="r">' + (a.join_total != null ? a.join_total : '—') + '</td>'
+      + '<td class="r"><span class="cd" data-cd="' + key + '">计算中</span></td>'
+      + '</tr>';
+  }
+  h += '</tbody></table>';
+  $('an').innerHTML = h;
+  tickCountdowns();
+}
+
+// ── 渲染已结束 ──────────────────────────────────────────────────
+function renderExpired(list){
+  $('p-exp').textContent = list.length ? list.length + ' 个' : '暂无';
+  if (!list.length){
+    $('exp').innerHTML = '<div class="empty">暂无<span class="hint">红包结束后会在这里保留 1 小时</span></div>';
+    return;
+  }
+  const ago = (t) => {
+    const s = Math.floor((Date.now() - t) / 1000);
+    if (s < 60) return s + ' 秒前';
+    if (s < 3600) return Math.floor(s / 60) + ' 分钟前';
+    return Math.floor(s / 3600) + ' 小时前';
+  };
+  $('exp').innerHTML = list.slice(0, 10).map(x =>
+    '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(35,42,59,.5);font-size:11.5px;opacity:.7">'
+    + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+    + roomLink(x.room_id) + ' ' + esc(x.award_name || '') + '</span>'
+    + '<span style="flex-shrink:0;color:var(--dim)">' + money(x.battery) + ' · ' + ago(x.expiredAt) + '</span>'
+    + '</div>'
+  ).join('');
+}
+
+// ── 渲染节点 ────────────────────────────────────────────────────
+function renderNodes(nodes, cur){
+  const alive = nodes.filter(n => !n.banned).length;
+  $('p-node').textContent = cur.node ? (cur.node.replace(/^[\u{1F1E6}-\u{1F1FF}]{2}\s*/u,'') + ' · ' + alive + '/' + nodes.length) : (alive + '/' + nodes.length);
+  $('nodes').innerHTML = nodes.map(n => {
+    const isCur = n.name === cur.node;
+    const pct = Math.min(100, Math.round((n.used / 70) * 100));
+    const short = n.name.replace(/^[\u{1F1E6}-\u{1F1FF}]{2}\s*/u, '');
+    return '<div class="node' + (isCur ? ' cur' : '') + (n.banned ? ' banned' : '') + '">'
+      + '<div class="nm"><span class="dot' + (n.banned ? ' off' : '') + '" style="width:6px;height:6px"></span>' + esc(short) + '</div>'
+      + '<div class="ip">' + esc(n.ip || '—') + (n.banned ? ' · 冷却' : '') + '</div>'
+      + '<div class="bar"><i class="' + (pct > 80 ? 'hi' : '') + '" style="width:' + pct + '%"></i></div>'
+      + '</div>';
+  }).join('') || '<div class="empty">无节点</div>';
+}
+
+// ── 渲染历史 ────────────────────────────────────────────────────
+function renderHist(list){
+  $('p-hist').textContent = list.length ? list.length + ' 条' : '—';
+  if (!list.length){ $('hist').innerHTML = '<div class="empty">还没有记录</div>'; return; }
+  const ago = (t) => {
+    const s = Math.floor((Date.now() - t) / 1000);
+    if (s < 60) return s + '秒前';
+    if (s < 3600) return Math.floor(s/60) + '分钟前';
+    return Math.floor(s/3600) + '小时前';
+  };
+  $('hist').innerHTML = list.slice(0, 8).map(x => {
+    const isRP = x.kind === 'popularity_red_pocket';
+    const val = isRP ? '<span class="money">' + money(x.battery) + '</span>' : '';
+    return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(35,42,59,.5);font-size:11.5px">'
+      + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+      + (isRP ? '💰' : '🎁') + ' ' + roomLink(x.room_id) + ' ' + esc(x.award_name || '') + '</span>'
+      + '<span style="flex-shrink:0;color:var(--dim)">' + val + ' ' + ago(x.foundAt) + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+// ── 主轮询 ──────────────────────────────────────────────────────
+let failCount = 0;
+let lastStats = {};
+
+async function tick(){
+  try{
+    const r = await fetch('/pool/api/state', { cache: 'no-store' });
+    const d = await r.json();
+    renderScanControl(d);
+
+    if (!d.ok){
+      $('dot').className = 'dot off';
+      $('meta').textContent = d.msg || '扫描器未运行';
+      return;
+    }
+
+    failCount = 0;
+    lastStats = { ...(d.stats || {}), ...(d.settings || {}), lastRoundMs: d.lastRoundMs };
+    $('dot').className = d.scan?.enabled === false ? 'dot paused' : 'dot';
+    const phase = { idle:'等待到期房间', planning:'规划中', switching:'切节点', scanning:'扫描中', anchors:'查天选', sleeping:'休眠', cooldown:'等待节点恢复', pausing:'正在暂停', paused:'扫描已暂停', error:'错误', storage_error:'记录失败，已停止', stopped:'已停止' }[d.phase] || d.phase;
+    $('meta').textContent = '第 ' + d.round + ' 轮 · ' + phase + ' · ' + (d.current && d.current.node ? d.current.node : '—');
+
+    $('s-round').textContent = d.round || 0;
+    $('s-scanned').textContent = (d.stats && d.stats.scanned) || 0;
+    $('s-active').textContent = (d.redpockets || []).length + (d.anchors || []).length;
+    $('s-ms').innerHTML = ((d.lastRoundMs || 0) / 1000).toFixed(1) + '<small>s</small>';
+    $('s-req').textContent = (d.stats && d.stats.requests) || 0;
+    $('s-hit').textContent = (d.stats && d.stats.hits) || 0;
+    const ban = (d.stats && d.stats.banned) || 0;
+    $('s-ban').textContent = ban;
+    $('s-ban').style.color = ban > 0 ? 'var(--warn)' : 'var(--fg)';
+    const notice = d.notifications || {};
+    updateNoticeApplied(d);
+    $('notification-state').textContent = notice.enabled
+      ? (notice.settingsError || notice.lastError ? '桌面提醒异常 · 悬停查看原因' : '桌面提醒已开启')
+      : '桌面提醒已关闭';
+    $('notification-state').title = '本次已提交 ' + (notice.sent || 0) + ' 条提醒；同一红包只提醒一次'
+      + (notice.settings ? '。' + noticeRuleText(notice.settings) : '')
+      + (notice.settingsError || notice.lastError ? '。错误：' + (notice.settingsError || notice.lastError) : '。点击通知可打开直播间。');
+
+    renderRP(d.redpockets || []);
+    renderAN(d.anchors || []);
+    renderExpired(d.expired || []);
+    renderNodes(d.nodes || [], d.current || {});
+    renderHist((d.history || []).filter(r => !(d.blocklist?.rooms || []).includes(String(r.room_id))));
+    $('history-storage').textContent = d.storage?.error ? '长期记录异常，扫描已停止：' + d.storage.error
+      : d.storage?.enabled ? '长期记录已启用 · 本次运行已保存 ' + d.storage.completed + ' 条请求结果' : '长期记录尚未启用';
+    $('history-storage').style.color = d.storage?.error ? 'var(--bad)' : '';
+
+    const p = d.pool || {};
+    $('p-hot').textContent = p.hot || 0;
+    $('p-warm').textContent = p.warm || 0;
+    $('p-priority').textContent = p.priority || 0;
+    $('p-cold').textContent = p.cold || 0;
+    $('p-pool').textContent = ((p.hot||0)+(p.warm||0)+(p.cold||0)) + ' 房间';
+    const q = d.quota || {};
+    const settings = d.settings || {};
+    $('scan-plan').textContent = '本轮计划：HOT ' + (q.hot || 0) + ' · WARM ' + (q.warm || 0)
+      + ' · 榜单优先 ' + (q.priority || 0) + ' · 普通冷房间 ' + (q.regularCold ?? q.cold ?? 0)
+      + ' · 历史复查 ' + (q.historical || 0)
+      + '；普通探索保底 ' + Math.round((settings.explorationRatio || 0) * 100) + '%'
+      + (settings.priorityMaxRatio != null
+        ? '，榜单查询上限 ' + Math.round(settings.priorityMaxRatio * 100) + '%'
+        : '，榜单优先保底 ' + Math.round((settings.priorityRatio || 0) * 100) + '%（有到期房间时）')
+      + (d.qq && d.qq.accelerated != null ? '，QQ 近期来源 ' + d.qq.accelerated + ' 个加速复查' : '')
+      + (d.qq && d.qq.backedOff != null ? '，旧 QQ 来源 ' + d.qq.backedOff + ' 个降频' : '')
+      + (settings.valuePolicyVersion ? '。HOT 快扫 ' + (p.hotFast || 0) + ' 间、慢扫 ' + (p.hotSlow || 0)
+        + ' 间（近期人均 ≥ ' + settings.hotUsefulMinPerPerson + ' 电池保留快扫；低价值或观察结束后 '
+        + settings.hotLowValueIntervalMs / 1000 + ' 秒复查）；旧 QQ 降频最长 '
+        + settings.qqBackoffThirdIntervalMs / 60000 + ' 分钟' : '')
+      + (settings.delayMs ? '。主扫描 ' + settings.concurrency + ' 并发，请求间隔至少 ' + settings.delayMs / 1000
+        + ' 秒，每轮最多 ' + settings.perIpBudget + ' 次' : '')
+      + (settings.nodeBatchTargetMs ? '；慢节点按近期耗时缩小批次，本轮预算 ' + (q.total || settings.perIpBudget) + ' 次' : '')
+      + '。本次电池包 ' + ((d.stats && d.stats.batteryHits) || 0) + ' 个，失败响应 ' + ((d.stats && d.stats.errors) || 0) + ' 次'
+      + (d.discovery && d.discovery.running ? '；后台正在发现房间' : '');
+    const sourceTimes = (d.qq?.sources || []).map(s => s.latest_message).filter(Boolean).sort();
+    const latestQQ = sourceTimes.at(-1);
+    const latestQQAt = latestQQ ? Date.parse(latestQQ.replace(' ', 'T') + '+08:00') : 0;
+    const h = d.historical || {};
+    $('source-status').textContent = 'QQ 最新缓存消息：' + (latestQQ || '未知')
+      + (latestQQAt ? '（距今 ' + Math.max(0, Math.floor((Date.now() - latestQQAt) / 60000)) + ' 分钟）' : '')
+      + '。历史名单 ' + (h.candidates || 0) + ' 间，当前有效 ' + (h.active || 0)
+      + ' 间、待复查 ' + (h.due || 0) + ' 间；本次历史通道已查 ' + (h.requests || 0) + ' 次'
+      + (h.generatedAt ? '；名单生成于 ' + new Date(h.generatedAt).toLocaleString('zh-CN', {hour12:false}) : '')
+      + '。有近期列表证据最短 5 分钟，其余或连续四次空扫后最短 15 分钟，实际还需排队'
+      + (h.maxOverdueMs ? '；当前最长超出入选间隔 ' + Math.floor(h.maxOverdueMs / 60000) + ' 分钟' : '')
+      + (d.hotRank ? '。全站热门 TOP50：' + (d.hotRank.at
+        ? '上次更新 ' + new Date(d.hotRank.at).toLocaleTimeString('zh-CN', {hour12:false}) : '等待首次抓取')
+        + '，有效 ' + (d.hotRank.active || 0) + ' 间、冷房间 ' + (d.hotRank.cold || 0)
+        + ' 间；本次已发起查询 ' + (d.hotRank.scannedRooms || 0) + ' 间 / ' + (d.hotRank.requests || 0) + ' 次'
+        + (d.hotRank.error ? '；抓取失败：' + d.hotRank.error : '') : '');
+
+    const ago = Math.floor((Date.now() - d.updated) / 1000);
+    $('updated').textContent = '数据更新于 ' + ago + ' 秒前'
+      + (settings.readyNodeIntervalMs != null ? ' · 有可用出口时轮间等待 ' + settings.readyNodeIntervalMs / 1000 + 's' : '')
+      + ' · 等待节点或重试时 ' + (settings.roundIntervalMs || 8000) / 1000 + 's';
+    if (d.phase === 'stopped' || d.phase === 'storage_error') $('dot').className = 'dot off';
+    if (ago > 30 && !['stopped', 'storage_error'].includes(d.phase)){
+      $('dot').className = 'dot off';
+      $('meta').textContent = '数据已 ' + ago + ' 秒未更新（扫描器可能停了）';
+    }
+  }catch(e){
+    failCount++;
+    $('dot').className = 'dot off';
+    $('meta').textContent = '连不上本地服务 · ' + (failCount > 2 ? '请确认 node server.js 在运行' : '重试中');
+  }
+}
+
+tick();
+setInterval(tick, 2000);
+</script>
+</body>
+</html>
